@@ -1,10 +1,18 @@
 from parameters import *
 import math as m
 
-#################################################################
-#################################################################
-#################################################################
-#################################################################
+
+class datapoint:
+    def __init__(self, temperature, pressure):
+        self.T = temperature
+        self.p = pressure
+        self.rho = 0 #density
+
+        #Parameters of the EOS
+        self.delt = 0
+        self.tau = 0
+
+
 
 def search_p(rhoi, T, ps):
     delt = rhoi / rhoc
