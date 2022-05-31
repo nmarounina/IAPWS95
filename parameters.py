@@ -1,5 +1,5 @@
 
-import npmpy as np
+import numpy as np
 
 # Reference paper :
 #Wagner, W. & Pruß, A.

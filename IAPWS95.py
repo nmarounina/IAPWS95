@@ -1,38 +1,40 @@
 from parameters import *
 import math as m
-
+from scipy.optimize import *
+from scipy import constants
 
 class DataPoint:
     def __init__(self, temperature, pressure):
         self.T = temperature
         self.p = pressure
-        self.rho = 0  # density, units
 
         # Parameters of the EOS
-        self.delt = self.rho / rhoc
+        self.delt = 0.#self.rho / rhoc
         self.tau = Tc / self.T
 
+        self.rho = newton(self.search_rho_for_given_p, self.p/(self.T*constants.R) )  # density, units
 
 
-    def search_rho_for_given_p(self, rhoi, T, ps):
-        delt = rhoi / rhoc
-        tau = Tc / T
-        phir, dphird, dphirt, dphirtt, dphirdt, dphirdd = compute_phir(delt, tau)
 
-        return ((1. + delt * dphird) * rhoi * Rig * T - ps) / ps  # everything in Pa
+
+
+    def search_rho_for_given_p(self,rho_search):
+        self.delt=rho_search/ rhoc
+        return ((1. + self.delt * self.compute_dphir_d() ) *
+                rho_search * constants.R * self.T - self.p) / self.p
 
     #################################################################
     #################################################################
     #################################################################
     #################################################################
 
-    def pressure(self, rhoi, T):
-        delt = rhoi / rhoc
-        tau = Tc / T
-
-        phir, dphird, dphirt, dphirtt, dphirdt, dphirdd = compute_phir(delt, tau)
-
-        return (1. + delt * dphird) * rhoi * Rig * T
+    # def pressure(self, rhoi, T):
+    #     delt = rhoi / rhoc
+    #     tau = Tc / T
+    #
+    #     phir, dphird, dphirt, dphirtt, dphirdt, dphirdd = compute_phir(delt, tau)
+    #
+    #     return (1. + delt * dphird) * rhoi * Rig * T
 
     #################################################################
     #################################################################
@@ -217,7 +219,7 @@ class DataPoint:
             dDeltad = (self.delt - 1.) * (
                     A[i] * theta * 2. / bet[i] * ((self.delt - 1.) ** 2.) ** (1. / (2. * bet[i]) - 1.) + 2. * B[i] * a[
                 i] * (
-                            (delt - 1.) ** 2.) ** (a[i] - 1.))
+                            (self.delt - 1.) ** 2.) ** (a[i] - 1.))
 
             dDeltbid = b[i] * Delta ** (b[i] - 1.) * dDeltad
             ds4d = ds4d + n[i] * (Delta ** b[i] * (psi + self.delt * dpsid) + dDeltbid * self.delt * psi)
@@ -271,6 +273,18 @@ class DataPoint:
                      -1. * al[i] * (self.delt - eps[i]) ** 2. - be[i] * (self.tau - gam[i]) ** 2.) * (
                     (ti[i] / self.tau - 2. * be[i] * (self.tau - gam[i])) ** 2. - ti[i] / self.tau ** 2. - 2. * be[i])
 
+        ds4tt = 0.
+        for i in range(54, 56):
+            psi = m.exp(-1. * C[i] * (self.delt - 1.) ** 2. - D[i] * (self.tau - 1.) ** 2.)
+            theta = (1. - self.tau) + A[i] * ((self.delt - 1.) ** 2.) ** (1. / (2. * bet[i]))
+            Delta = theta ** 2 + B[i] * ((self.delt - 1.) ** 2.) ** (a[i])
+
+            dDeltbit = -2. * theta * b[i] * Delta ** (b[i] - 1.)
+            dpsit = -2. * D[i] * (self.tau - 1.) * psi
+            dpsitt = (2. * D[i] * (self.tau - 1.) ** 2. - 1.) * 2. * D[i] * psi
+            dDelbitt = 2. * b[i] * Delta ** (b[i] - 1.) + 4. * theta ** 2 * b[i] * (b[i] - 1.) * Delta ** (b[i] - 2.)
+
+            ds4tt = ds4tt + n[i] * self.delt * (dDelbitt * psi + 2. * dDeltbit * dpsit + Delta ** b[i] * dpsitt)
 
         return ds1tt + ds2tt + ds3tt + ds4tt
 
@@ -300,6 +314,27 @@ class DataPoint:
                     d[i] * al[i] * self.delt ** (d[i] - 1.) * (self.delt - eps[i]) + d[i] * (d[i] - 1.) * self.delt ** (
                     d[i] - 2.))
 
+        ds4dd = 0.
+        for i in range(54, 56):
+            psi = m.exp(-1. * C[i] * (self.delt - 1.) ** 2. - D[i] * (self.tau - 1.) ** 2.)
+            theta = (1. - self.tau) + A[i] * ((self.delt - 1.) ** 2.) ** (1. / (2. * bet[i]))
+            Delta = theta ** 2 + B[i] * ((self.delt - 1.) ** 2.) ** (a[i])
+
+            dDeltad = (self.delt - 1.) * (
+                    A[i] * theta * 2. / bet[i] * ((self.delt - 1.) ** 2.) ** (1. / (2. * bet[i]) - 1.) + 2. * B[i] * a[i] * (
+                    (self.delt - 1.) ** 2.) ** (a[i] - 1.))
+            dDeltbid = b[i] * Delta ** (b[i] - 1.) * dDeltad
+            dpsid = -2. * C[i] * (self.delt - 1.) * psi
+            dpsidd = (2. * C[i] * (self.delt - 1) ** 2. - 1.) * 2. * C[i] * psi
+            dDeldd = 1. / (self.delt - 1.) * dDeltad + (self.delt - 1.) ** 2 * (
+                                 4. * B[i] * a[i] * (a[i] - 1.) * ((self.delt - 1.) ** 2.) ** (a[i] - 2.) + 2. * A[i] ** 2. * (
+                                 1. / bet[i]) ** 2. * (((self.delt - 1.) ** 2.) ** (1. / (2. * bet[i]) - 1.)) ** 2 + A[
+                                     i] * theta * 4. / bet[i] * (1. / (2. * bet[i]) - 1.) * ((self.delt - 1.) ** 2.) ** (
+                                         1. / (2. * bet[i]) - 2.))
+            dDelbidd = b[i] * (Delta ** (b[i] - 1.) * dDeldd + (b[i] - 1.) * Delta ** (b[i] - 2.) * dDeltad ** 2.)
+
+            ds4dd = ds4dd + n[i] * (Delta ** b[i] * (2. * dpsid + self.delt * dpsidd) + 2. * dDeltbid * (
+                         psi + self.delt * dpsid) + dDelbidd * self.delt * psi)
 
         return ds1dd + ds2dd + ds3dd + ds4dd
 
@@ -312,19 +347,42 @@ class DataPoint:
         ds1dt = 0.
 
         for i in range(0, 7):
-            ds1dt = ds1dt + n[i] * d[i] * ti[i] * tau ** (ti[i] - 1.) * delt ** (d[i] - 1.)
+            ds1dt = ds1dt + n[i] * d[i] * ti[i] * self.tau ** (ti[i] - 1.) * self.delt ** (d[i] - 1.)
 
         ds2dt = 0.
 
         for i in range(7, 51):
-            ds2dt = ds2dt + n[i] * ti[i] * tau ** (ti[i] - 1.) * delt ** (d[i] - 1.) * (d[i] - c[i] * delt ** c[i]) * m.exp(
-                     -1. * delt ** c[i])
+            ds2dt = ds2dt + n[i] * ti[i] * self.tau ** (ti[i] - 1.) * self.delt ** (d[i] - 1.) * (d[i] - c[i] * self.delt ** c[i]) * m.exp(
+                     -1. * self.delt ** c[i])
 
         ds3dt = 0.
         for i in range(51, 54):
 
-            ds3dt = ds3dt + n[i] * delt ** d[i] * tau ** ti[i] * m.exp(
-                     -1. * al[i] * (delt - eps[i]) ** 2. - be[i] * (tau - gam[i]) ** 2.) * (
-                    ti[i] / tau - 2. * be[i] * (tau - gam[i])) * (d[i] / delt - 2. * al[i] * (delt - eps[i]))
+            ds3dt = ds3dt + n[i] * self.delt ** d[i] * self.tau ** ti[i] * m.exp(
+                     -1. * al[i] * (self.delt - eps[i]) ** 2. - be[i] * (self.tau - gam[i]) ** 2.) * (
+                    ti[i] / self.tau - 2. * be[i] * (self.tau - gam[i])) * (d[i] / self.delt - 2. * al[i] * (self.delt - eps[i]))
+
+        ds4dt = 0.
+        for i in range(54, 56):
+            psi = m.exp(-1. * C[i] * (self.delt - 1.) ** 2. - D[i] * (self.tau - 1.) ** 2.)
+            theta = (1. - self.tau) + A[i] * ((self.delt - 1.) ** 2.) ** (1. / (2. * bet[i]))
+            Delta = theta ** 2 + B[i] * ((self.delt - 1.) ** 2.) ** (a[i])
+
+            dDeltad = (self.delt - 1.) * (
+                 A[i] * theta * 2. / bet[i] * ((self.delt - 1.) ** 2.) ** (1. / (2. * bet[i]) - 1.) + 2. * B[i] * a[i] * (
+                (self.delt - 1.) ** 2.) ** (a[i] - 1.))
+            dDeltbid = b[i] * Delta ** (b[i] - 1.) * dDeltad
+            dDeltbit = -2. * theta * b[i] * Delta ** (b[i] - 1.)
+            dpsid = -2. * C[i] * (self.delt - 1.) * psi
+            dpsit = -2. * D[i] * (self.tau - 1.) * psi
+
+            dpsidt = 4. * C[i] * D[i] * (self.delt - 1.) * (self.tau - 1.) * psi
+
+            dDelbidt = -1. * A[i] * b[i] * 2. / bet[i] * Delta ** (b[i] - 1.) * (self.delt - 1.) * ((self.delt - 1.) ** 2.) ** (
+                 1. / (2. * bet[i]) - 1.) - 2. * theta * b[i] * (b[i] - 1.) * Delta ** (b[i] - 2.) * dDeltad
+
+
+            ds4dt = ds4dt + n[i] * (Delta ** b[i] * (dpsit + self.delt * dpsidt) + self.delt * dDeltbid * dpsit + dDeltbit * (
+                    psi + self.delt * dpsid) + dDelbidt * self.delt * psi)
 
         return ds1dt + ds2dt + ds3dt + ds4dt
