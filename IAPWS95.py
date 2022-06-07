@@ -14,7 +14,8 @@ class DataPoint:
         self.tau = Tc / self.T
 
         self.rho = newton(self.search_rho_for_given_p,
-                          self.p / (self.T * constants.R))  # density, mol.m-3
+                          1000./M_h2o,#self.p / (self.T * constants.R),
+                          )  # density, mol.m-3
 
         self.delt = self.rho / rhoc
 
