@@ -2,7 +2,7 @@ from parameters import *
 import math as m
 from scipy.optimize import *
 from scipy import constants
-
+import phase_limits
 
 class DataPoint:
     def __init__(self, temperature, pressure):
@@ -13,9 +13,7 @@ class DataPoint:
         self.delt = 0.
         self.tau = Tc / self.T
 
-        self.rho = newton(self.search_rho_for_given_p,
-                          1000./M_h2o,#self.p / (self.T * constants.R),
-                          )  # density, mol.m-3
+        self.rho = self.get_density()
 
         self.delt = self.rho / rhoc
 
@@ -41,8 +39,48 @@ class DataPoint:
         self.dsdp = (1. / (self.T * self.rho) - 1. / self.T * self.dhdp_T) * (-1.)
         self.phase = "vapor"  # for now
 
+    def get_density(self):
+
+        if self.T > Tc :
+
+            return bisect(self.search_rho_for_given_p,
+                   1e-10,
+                   self.p / (self.T * constants.R) *10.,
+                   )  # density, mol.m-3
+
+        elif self.T<=Tc and self.T>=Tt :
+
+            SVP=phase_limits.get_SVP_vap_liq(self.T)
+
+            if self.p>SVP:
+                return newton(self.search_rho_for_given_p,
+                              2000./M_h2o,
+                              )  # density, mol.m-3
+            else:
+                return newton(self.search_rho_for_given_p,
+                              self.p / (self.T * constants.R),
+                              )  # density, mol.m-3
+
+        elif self.T < Tt :
+
+            SVP = phase_limits.get_SVP_vap_ice(self.T)
+
+            if self.p > SVP:
+                return newton(self.search_rho_for_given_p,
+                              2000. / M_h2o,
+                              )  # density, mol.m-3
+            else:
+                return newton(self.search_rho_for_given_p,
+                              self.p / (self.T * constants.R),
+                              )  # density, mol.m-3
+
+
+
+
     def search_rho_for_given_p(self, rho_search):
         self.delt = rho_search / rhoc
+        # print( rho_search, ((1. + self.delt * self.compute_dphir_d()) *
+        #         rho_search * constants.R * self.T - self.p) / self.p )
         return ((1. + self.delt * self.compute_dphir_d()) *
                 rho_search * constants.R * self.T - self.p) / self.p
 
