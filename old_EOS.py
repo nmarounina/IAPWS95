@@ -296,7 +296,7 @@ f_SVP_l=interpolate.interp1d(tsvp,rhosvp_l)
 
 def w(T,rho,p): #transition function from Mazevet to IAPWS in the fluid phase
 
-    delT=domega#50.#do not touch that
+    delT=domega
     T0=1273.
     omega=1.
     
@@ -652,27 +652,27 @@ def WEOS(T,ps,phase):
 #################################################################
 
 def search_p(rhoi,T,ps):
-    
+
     delt=rhoi/rhoc
     tau=Tc/T
     phir,dphird,dphirt,dphirtt,dphirdt,dphirdd=CALC_phir1(delt,tau)
-    
+
     return ((1. + delt*dphird)*rhoi*Rig*T - ps)/ps # everything in Pa
 
- 
+
 #################################################################
 #################################################################
 #################################################################
 #################################################################
 
 def pressure(rhoi,T):
-    
-    
+
+
     delt=rhoi/rhoc
     tau=Tc/T
-    
+
     phir,dphird,dphirt,dphirtt,dphirdt,dphirdd=CALC_phir1(delt,tau)
-    
+
     return (1. + delt*dphird)*rhoi*Rig*T
 
 
@@ -752,7 +752,7 @@ def CALC_phir1(delt,tau):
     c[4]=0.; d[4]=2.; ti[4]=0.75;  n[4]=-0.26145533859358e0;
     c[5]=0.; d[5]=3.; ti[5]=0.375; n[5]=-0.78199751687981e-2;
     c[6]=0.; d[6]=4.; ti[6]=1.;    n[6]=0.88089493102134e-2;
-    
+
 
     sum1=0.
     ds1d=0.
@@ -760,7 +760,7 @@ def CALC_phir1(delt,tau):
     ds1tt=0.
     ds1dd=0.
     ds1dt=0.
- 
+
     for i in range(0,7):
         sum1=sum1 + n[i]*delt**d[i]*tau**ti[i]
         ds1d=ds1d + n[i]*d[i]*delt**(d[i]-1.)*tau**ti[i]
@@ -831,7 +831,7 @@ def CALC_phir1(delt,tau):
         ds2tt=ds2tt + n[i] * ti[i]*(ti[i]-1.)*delt**d[i]*tau**(ti[i]-2.) * m.exp(-1.*delt**c[i])
         ds2dd=ds2dd + n[i] * m.exp(-1.*delt**c[i])*( delt**(d[i]-2.)*tau**ti[i]*( (d[i]-c[i]*delt**c[i])*(d[i]-1.-c[i]*delt**c[i]) - c[i]**2.*delt**c[i] ) )
         ds2dt=ds2dt + n[i] * ti[i]* tau**(ti[i]-1.)*delt**(d[i]-1.)*(d[i]-c[i]*delt**c[i])*m.exp(-1.*delt**c[i])
-    
+
 
 
 
@@ -853,9 +853,9 @@ def CALC_phir1(delt,tau):
         ds3d=ds3d +     n[i]*delt**d[i] * tau**ti[i] * m.exp(-1.*al[i]*(delt-eps[i])**2. - be[i]*(tau-gam[i])**2.) * ( d[i]/delt - 2.*al[i]*(delt-eps[i]) )
         ds3t=ds3t +     n[i]*delt**d[i] * tau**ti[i] * m.exp(-1.*al[i]*(delt-eps[i])**2. - be[i]*(tau-gam[i])**2.) * ( ti[i]/tau-2. *be[i]*(tau-gam[i]) )
         ds3tt=ds3tt +   n[i]*delt**d[i] * tau**ti[i] * m.exp(-1.*al[i]*(delt-eps[i])**2. - be[i]*(tau-gam[i])**2.) * ( (ti[i]/tau-2.*be[i]*(tau-gam[i]))**2. - ti[i]/tau**2. - 2.*be[i] )
-        
+
         ds3dd=ds3dd +  n[i]*tau**ti[i] * m.exp( -1.*al[i]*(delt-eps[i])**2. - be[i]*(tau-gam[i])**2. ) * ( -2.*al[i]*delt**d[i] + 4.*al[i]**2*delt**d[i]*(delt-eps[i])**2. - 4.*d[i]*al[i]*delt**(d[i]-1.)*(delt-eps[i]) + d[i]*(d[i]-1.)*delt**(d[i]-2.) )
-        
+
         ds3dt=ds3dt +   n[i]*delt**d[i] * tau**ti[i] * m.exp(-1.*al[i]*(delt-eps[i])**2. - be[i]*(tau-gam[i])**2.) * (ti[i]/tau-2.*be[i]*(tau-gam[i])) * (d[i]/delt - 2.*al[i]*(delt-eps[i]))
 
 
@@ -876,34 +876,31 @@ def CALC_phir1(delt,tau):
         psi=m.exp( -1.*C[i]*(delt-1.)**2.  - D[i]*(tau-1.)**2.  )# ok
         theta=(1.-tau)+A[i]*((delt-1.)**2. )**(1./(2.*bet[i]))# ok
         Delta=theta**2+B[i]*((delt-1.)**2.)**(a[i])# ok
-    
+
         dDeltad=(delt-1.) * (A[i]*theta*2./bet[i] * ((delt-1.)**2. )**(1./(2.*bet[i])-1.) + 2.*B[i]*a[i]*((delt-1.)**2. )**(a[i]-1. )  )
         dDeltbid=b[i]*Delta**(b[i]-1.)*dDeltad
         dDeltbit=-2.*theta*b[i]*Delta**( b[i]-1.)
         dpsid=-2.*C[i]*(delt-1.)*psi
         dpsit=-2.*D[i]*(tau-1.)*psi
-        
+
         dpsitt=( 2.*D[i]*(tau-1.)**2. - 1. )*2.*D[i]*psi
         dpsidd=(2.*C[i]*(delt-1)**2.-1.)*2.*C[i]*psi
         dpsidt=4.*C[i]*D[i]*(delt-1.)*(tau-1.)*psi
-        
+
         dDeldd=1./(delt-1.)*dDeltad + (delt-1.)**2*( 4.*B[i]*a[i]*(a[i]-1.)*((delt-1.)**2.)**(a[i]-2.) + 2.*A[i]**2.*(1./bet[i])**2.*( ((delt-1.)**2.)**(1./(2.*bet[i])-1.) )**2 + A[i]*theta*4./bet[i]*(1./(2.*bet[i])-1.)*((delt-1.)**2.)**(1./(2.*bet[i])-2.) )
         dDelbitt=2.*b[i]*Delta**(b[i]-1.) + 4.*theta**2*b[i]*(b[i]-1.)*Delta**(b[i]-2.)
         dDelbidd=b[i]*( Delta**(b[i]-1.)*dDeldd + (b[i]-1.)*Delta**(b[i]-2.)*dDeltad**2. )
         dDelbidt=-1.*A[i]*b[i]*2./bet[i]*Delta**(b[i]-1.)*(delt-1.)*((delt-1.)**2. )**(1./(2.*bet[i])-1.) - 2.*theta*b[i]*(b[i]-1.)*Delta**(b[i]-2.)*dDeltad
-        
+
         sum4=sum4 + n[i]*Delta**(b[i])*delt*psi
         ds4t=ds4t + n [i]*delt*( dDeltbit*psi + Delta**b[i]*dpsit )
         ds4d=ds4d + n[i]*( Delta**b[i]*(psi+delt*dpsid) + dDeltbid*delt*psi )
         ds4tt=ds4tt + n[i]*delt*( dDelbitt*psi + 2.*dDeltbit*dpsit + Delta**b[i]*dpsitt)
-        
+
         ds4dd=ds4dd + n[i]*( Delta**b[i]*(2.*dpsid+delt*dpsidd) + 2.*dDeltbid*(psi+delt*dpsid) + dDelbidd*delt*psi )
         ds4dt=ds4dt + n[i]*( Delta**b[i]*(dpsit+delt*dpsidt) + delt*dDeltbid*dpsit + dDeltbit*(psi+delt*dpsid) + dDelbidt*delt*psi)
 
-    
-    
-    #continuite des lignes en python
-    
+
 
 
     phir=sum1+sum2+sum3+sum4
@@ -912,7 +909,7 @@ def CALC_phir1(delt,tau):
     dphirtt=ds1tt+ds2tt+ds3tt+ds4tt
     dphirdd=ds1dd+ds2dd+ds3dd+ds4dd
     dphirdt=ds1dt+ds2dt+ds3dt+ds4dt
-    
+
     return phir,dphird,dphirt,dphirtt,dphirdt,dphirdd
 
 
@@ -988,23 +985,4 @@ def Psat(T) :#Sat VP in Pa !!
 
 
     return Psat
-
-
-
-
-# #-------------------------------------------------
-#
-# def Tsat(p):
-#
-#     if (p>pc):
-#         Tsat=pc+1.
-#
-#     if (p<pc):
-#         #   Tsat= optimize.newton(search_Tsat, Ti, maxiter=1000, args=(p,), fprime=deriv_Psat)
-#         Tsat= optimize.bisect(search_Tsat,190.,Tc,args=(p,))
-#
-#     if (p==pc) :
-#         Tsat=Tc
-#
-#     return Tsat
 

@@ -37,6 +37,7 @@ class DataPoint:
         self.dhdp_T = (1. - (1. + self.delt * self.dphird - self.delt * self.tau * self.dphirdt) / (
                 1. + 2. * self.delt * self.dphird + self.delt ** 2 * self.dphirdd)) * 1. / self.rho
         self.dsdp = (1. / (self.T * self.rho) - 1. / self.T * self.dhdp_T) * (-1.)
+
         self.phase = "vapor"  # for now
 
     def get_density(self):
@@ -79,8 +80,6 @@ class DataPoint:
 
     def search_rho_for_given_p(self, rho_search):
         self.delt = rho_search / rhoc
-        # print( rho_search, ((1. + self.delt * self.compute_dphir_d()) *
-        #         rho_search * constants.R * self.T - self.p) / self.p )
         return ((1. + self.delt * self.compute_dphir_d()) *
                 rho_search * constants.R * self.T - self.p) / self.p
 
