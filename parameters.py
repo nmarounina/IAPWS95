@@ -22,6 +22,11 @@ M_h2o = 18.015268e-3 #kg.mol-1, molar mass
 
 
 # PARAMETERS OF THE EQUATION OF STATE :
+#parameter that allows a smooth transition between the IAPWS EOS and ... EOS
+domega=50.
+
+
+
 # PHI0 -- residual part of IAPWS95, Equation 6.6
 # Coefficients listed in Table 6.2
 
