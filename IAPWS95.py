@@ -38,7 +38,6 @@ class DataPoint:
                 1. + 2. * self.delt * self.dphird + self.delt ** 2 * self.dphirdd)) * 1. / self.rho
         self.dsdp = (1. / (self.T * self.rho) - 1. / self.T * self.dhdp_T) * (-1.)
 
-        self.phase = "vapor"  # for now
 
     def get_density(self):
 
